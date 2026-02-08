@@ -4,7 +4,7 @@ import com.github.manu585.advancedreplays.api.actor.Actor;
 import com.github.manu585.advancedreplays.api.domain.ActorProfile;
 import com.github.manu585.advancedreplays.api.domain.ReplayPosition;
 import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.util.GameProfiles;
-import com.github.manu585.advancedreplays.nms_v1_21_r0.resolver.LevelResolver;
+import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.world.LevelResolver;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
@@ -21,7 +21,7 @@ public class PlayerReplayActor implements Actor {
   private ServerPlayer handle; // may be null
   private boolean spawned;
 
-  private PlayerReplayActor(ActorProfile actorProfile, MinecraftServer server, LevelResolver levelResolver) {
+  public PlayerReplayActor(ActorProfile actorProfile, MinecraftServer server, LevelResolver levelResolver) {
     this.actorProfile = actorProfile;
     this.server = server;
     this.levelResolver = levelResolver;
