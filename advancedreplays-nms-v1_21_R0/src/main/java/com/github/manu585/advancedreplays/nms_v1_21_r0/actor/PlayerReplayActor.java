@@ -1,8 +1,11 @@
 package com.github.manu585.advancedreplays.nms_v1_21_r0.actor;
 
-import com.github.manu585.advancedreplays.api.actor.Actor;
 import com.github.manu585.advancedreplays.api.domain.ActorProfile;
 import com.github.manu585.advancedreplays.api.domain.ReplayPosition;
+import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.handle.NmsActorHandle;
+import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.handle.PlayerActorHandle;
+import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.packet.ActorPacketBridge;
+import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.packet.ViewerProvider;
 import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.util.GameProfiles;
 import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.world.LevelResolver;
 import com.mojang.authlib.GameProfile;
@@ -12,49 +15,34 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 
-public class PlayerReplayActor implements Actor {
+/** Replay actor implementation for player-type entities, creating a fake ServerPlayer via NMS. */
+public class PlayerReplayActor extends BaseReplayActor {
 
   private final ActorProfile actorProfile;
   private final MinecraftServer server;
   private final LevelResolver levelResolver;
 
-  private ServerPlayer handle; // may be null
-  private boolean spawned;
-
-  public PlayerReplayActor(ActorProfile actorProfile, MinecraftServer server, LevelResolver levelResolver) {
+  public PlayerReplayActor(ActorProfile actorProfile, MinecraftServer server,
+                            LevelResolver levelResolver, ActorPacketBridge actorPacketBridge,
+                            ViewerProvider viewerProvider) {
+    super(actorPacketBridge, viewerProvider);
     this.actorProfile = actorProfile;
     this.server = server;
     this.levelResolver = levelResolver;
   }
 
   @Override
-  public void spawn(ReplayPosition position) {
-    if (spawned) {
-      return;
-    }
-
+  protected NmsActorHandle createHandle(ReplayPosition position) {
     ServerLevel serverLevel = levelResolver.resolve(position.worldName());
     GameProfile gameProfile = GameProfiles.from(actorProfile);
 
-    this.handle = new ServerPlayer(server, serverLevel, gameProfile, ClientInformation.createDefault());
-    handle.moveOrInterpolateTo(new Vec3(position.x(), position.y(), position.z()));
+    ServerPlayer player = new ServerPlayer(server, serverLevel, gameProfile, ClientInformation.createDefault());
+    player.moveOrInterpolateTo(new Vec3(position.x(), position.y(), position.z()));
+    player.setYRot(position.yaw());
+    player.setXRot(position.pitch());
+    player.setYHeadRot(position.yaw());
 
-    spawned = true;
-  }
-
-  @Override
-  public void teleport(ReplayPosition position) {
-
-  }
-
-  @Override
-  public void tick() {
-
-  }
-
-  @Override
-  public void destroy() {
-
+    return new PlayerActorHandle(player);
   }
 
 }

@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
+/** Utility for creating Mojang GameProfile instances for fake player actors. */
 public class GameProfiles {
 
   private GameProfiles() {}

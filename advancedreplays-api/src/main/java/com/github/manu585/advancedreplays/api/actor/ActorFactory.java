@@ -3,6 +3,7 @@ package com.github.manu585.advancedreplays.api.actor;
 import com.github.manu585.advancedreplays.api.actor.specs.ActorSpec;
 import com.github.manu585.advancedreplays.api.domain.ReplayPosition;
 
+/** Factory for creating replay actors from specifications. */
 public interface ActorFactory {
 
   Actor createInstance(ActorSpec actorSpec);

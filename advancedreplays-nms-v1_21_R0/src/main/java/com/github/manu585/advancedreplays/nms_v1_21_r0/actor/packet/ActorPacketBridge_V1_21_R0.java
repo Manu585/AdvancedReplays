@@ -3,17 +3,27 @@ package com.github.manu585.advancedreplays.nms_v1_21_r0.actor.packet;
 import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.handle.NmsActorHandle;
 import com.github.manu585.advancedreplays.nms_v1_21_r0.actor.handle.PlayerActorHandle;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
+import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.item.ItemStack;
 
+/**
+ * Version-specific packet bridge for 1.21, building and sending raw NMS packets.
+ */
 public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
 
   @Override
@@ -29,7 +39,6 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
         continue;
       }
 
-      // only if actor is fake player
       sendPlayerSpawnPrePacketsIfNeeded(actor, viewer);
 
       viewer.connection.send(addEntity);
@@ -38,7 +47,6 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
       }
       viewer.connection.send(headRot);
 
-      // optional: post packets for player (e.g. remove from tab later)
       sendPlayerSpawnPostPacketsIfNeeded(actor, viewer);
     }
   }
@@ -48,10 +56,10 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
     Entity entity = actor.entity();
 
     Packet<?> tp = ClientboundTeleportEntityPacket.teleport(
-            entity.getId(),
-            absoluteChange(entity),
-            Set.of(),
-            entity.onGround()
+        entity.getId(),
+        absoluteChange(entity),
+        Set.of(),
+        entity.onGround()
     );
 
     Packet<?> head = new ClientboundRotateHeadPacket(entity, toAngle(entity.getYHeadRot()));
@@ -76,6 +84,48 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
     }
   }
 
+  @Override
+  public void sendEquipment(NmsActorHandle actor, EquipmentSlot slot, ItemStack item, Collection<ServerPlayer> viewers) {
+    Packet<?> packet = new ClientboundSetEquipmentPacket(
+        actor.entityId(),
+        List.of(Pair.of(slot, item))
+    );
+    for (ServerPlayer viewer : viewers) {
+      if (viewer == null) continue;
+      viewer.connection.send(packet);
+    }
+  }
+
+  @Override
+  public void sendMetadata(NmsActorHandle actor, Collection<ServerPlayer> viewers) {
+    Entity entity = actor.entity();
+    var nonDefaults = entity.getEntityData().getNonDefaultValues();
+    if (nonDefaults == null) return;
+    Packet<?> packet = new ClientboundSetEntityDataPacket(entity.getId(), nonDefaults);
+    for (ServerPlayer viewer : viewers) {
+      if (viewer == null) continue;
+      viewer.connection.send(packet);
+    }
+  }
+
+  @Override
+  public void sendAnimation(NmsActorHandle actor, int animationId, Collection<ServerPlayer> viewers) {
+    Packet<?> packet = new ClientboundAnimatePacket(actor.entity(), animationId);
+    for (ServerPlayer viewer : viewers) {
+      if (viewer == null) continue;
+      viewer.connection.send(packet);
+    }
+  }
+
+  @Override
+  public void sendEntityStatus(NmsActorHandle actor, byte status, Collection<ServerPlayer> viewers) {
+    Packet<?> packet = new ClientboundEntityEventPacket(actor.entity(), status);
+    for (ServerPlayer viewer : viewers) {
+      if (viewer == null) continue;
+      viewer.connection.send(packet);
+    }
+  }
+
   private void sendPlayerSpawnPrePacketsIfNeeded(NmsActorHandle actor, ServerPlayer viewer) {
     if (!(actor instanceof PlayerActorHandle playerHandle)) return;
 
@@ -90,10 +140,10 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
 
   private static PositionMoveRotation absoluteChange(Entity entity) {
     return new PositionMoveRotation(
-            entity.position(),
-            entity.getDeltaMovement(),
-            entity.getYRot(),
-            entity.getXRot()
+        entity.position(),
+        entity.getDeltaMovement(),
+        entity.getYRot(),
+        entity.getXRot()
     );
   }
 
@@ -103,17 +153,17 @@ public class ActorPacketBridge_V1_21_R0 implements ActorPacketBridge {
 
   private static Packet<?> buildAddEntityPacket(Entity entity) {
     return new ClientboundAddEntityPacket(
-            entity.getId(),
-            entity.getUUID(),
-            entity.getX(),
-            entity.getY(),
-            entity.getZ(),
-            entity.getXRot(),
-            entity.getYRot(),
-            entity.getType(),
-            0,
-            entity.getDeltaMovement(),
-            entity.getYHeadRot()
+        entity.getId(),
+        entity.getUUID(),
+        entity.getX(),
+        entity.getY(),
+        entity.getZ(),
+        entity.getXRot(),
+        entity.getYRot(),
+        entity.getType(),
+        0,
+        entity.getDeltaMovement(),
+        entity.getYHeadRot()
     );
   }
 
