@@ -1,0 +1,5 @@
+name: AdvancedReplays
+version: '1.0-SNAPSHOT'
+main: com.github.manu585.advancedreplays.bukkit.AdvancedReplaysPlugin
+description: Server-side replay system for moderation
+api-version: '1.21'
